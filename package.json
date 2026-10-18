@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/genai": "^2.30.0",
+    "framer-motion": "^14.3.0",
+    "lucide-react": "^1.57.0",
     "next": "16.4.1",
     "react": "19.3.0",
     "react-dom": "19.3.0"
@@ -21,6 +24,9 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^5.0.4"
   }
 }

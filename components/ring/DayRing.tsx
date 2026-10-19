@@ -2,7 +2,7 @@
 
 // components/ring/DayRing.tsx
 // The 24H Day-Ring dial. Built ONLY from the real contracts:
-//   lib/ring-geometry.ts → RING, SLOT_ANGLES, polar(), sectorPath(), layoutTokens(), layoutHub(), formatWindow(), Placement
+//   lib/ring-geometry.ts → RING, SLOT_ANGLES, polar(), sectorPath(), layoutHub(), formatWindow(), Placement
 //   lib/ui-model.ts      → GlyphStyle, Selection
 //   components/ring/PillGlyph.tsx → GlyphDefs, PillGlyph
 // No animation library is used here: every pixel is deterministic between SSR and hydration.
@@ -10,7 +10,7 @@
 import { useId, useMemo } from 'react';
 import type { CompiledMedication, CompiledSchedule, DoseGeometry, RingTrack, UmsSlot } from '@/types/ums';
 import { UMS_SLOTS } from '@/types/ums';
-import { RING, SLOT_ANGLES, formatWindow, layoutHub, layoutTokens, polar, sectorPath, type Placement } from '@/lib/ring-geometry';
+import { RING, SLOT_ANGLES, formatWindow, layoutHub, polar, sectorPath, type Placement } from '@/lib/ring-geometry';
 import { slotName, ui, type Lang } from '@/lib/phrasebook';
 import type { GlyphStyle, Selection } from '@/lib/ui-model';
 import { GlyphDefs, PillGlyph } from '@/components/ring/PillGlyph';
@@ -34,9 +34,35 @@ const CLOCK_MARKS: ReadonlyArray<{ deg: number; label: string }> = [
     { deg: 270, label: '12 AM' },
 ];
 
+/** Semantic time-of-day chromatic coding — colour + shape + pattern redundancy. */
+const SLOT_COLOR: Record<UmsSlot, string> = {
+    MORNING: '#d97706',
+    NOON: '#0284c7',
+    EVENING: '#ea580c',
+    BEDTIME: '#4f46e5',
+};
+
+const SLOT_PILL: Record<UmsSlot, { idle: string; active: string }> = {
+    MORNING: {
+        idle: 'bg-amber-50 border-amber-300 text-amber-950',
+        active: 'bg-amber-600 text-white border-amber-600',
+    },
+    NOON: {
+        idle: 'bg-sky-50 border-sky-300 text-sky-950',
+        active: 'bg-sky-600 text-white border-sky-600',
+    },
+    EVENING: {
+        idle: 'bg-orange-50 border-orange-300 text-orange-950',
+        active: 'bg-orange-600 text-white border-orange-600',
+    },
+    BEDTIME: {
+        idle: 'bg-indigo-50 border-indigo-300 text-indigo-950',
+        active: 'bg-indigo-600 text-white border-indigo-600',
+    },
+};
+
 const RAD = Math.PI / 180;
 const textWidth = (s: string, px: number): number => s.length * px * 0.58;
-const distance = (a: Placement, b: Placement): number => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp = (v: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, v));
 /**
  * Every SVG coordinate derived from trigonometry is written with toFixed(2). Node and Chromium use
@@ -55,16 +81,17 @@ interface ScheduledToken {
     track: RingTrack;
     x: number;
     y: number;
+    deg: number; // angle in degrees from 12 o'clock, clockwise
     plateR: number;
     haloR: number;
     glyphSize: number;
-    tagSide: 1 | -1;
     tagW: number;
     tagH: number;
-    tagY: number;
+    tagY: number; // radial distance from token center to label center
     note: string | null;
     geometry: DoseGeometry;
     glyph: GlyphStyle;
+    slotColor: string;
 }
 
 interface HubToken {
@@ -77,27 +104,34 @@ interface HubToken {
     y: number;
     plateR: number;
     glyphSize: number;
+    slotColor: string;
 }
 
 function buildTokens(schedule: CompiledSchedule, glyphs: ReadonlyMap<string, GlyphStyle>): ScheduledToken[] {
     const out: ScheduledToken[] = [];
     for (const cell of schedule.ringCells) {
         if (cell.items.length === 0) continue;
-        const places = layoutTokens(cell.items.length, cell.track, cell.slot);
-        const side: 1 | -1 = cell.track === 'INNER' ? -1 : 1; // inner band labels point at the hub, outer band labels point at the bezel
-        const crowded = cell.items.length >= 5;
+        const band = cell.track === 'INNER' ? RING.inner : RING.outer;
+        const [a0, a1] = SLOT_ANGLES[cell.slot];
+        const pad = RING.gutterDeg + 4;
+        const span = a1 - a0 - 2 * pad;
+        const step = span / Math.max(cell.items.length, 1);
+        const rMid = (band.r0 + band.r1) / 2;
+        const rHalf = Math.max((band.r1 - band.r0) / 2 - 8, 6); // half-band minus padding, min 6px
+
         cell.items.forEach((item, i) => {
-            const p = places[i];
-            if (!p) return;
-            const prev = places[i - 1];
-            const next = places[i + 1];
-            const gap = Math.min(prev ? distance(prev, p) : Number.POSITIVE_INFINITY, next ? distance(next, p) : Number.POSITIVE_INFINITY);
-            const plateR = clamp(Math.min(p.size * 0.56, Number.isFinite(gap) ? gap * 0.45 : p.size * 0.56), 9, 27);
+            // Stagger radial distance within the band so same-slot tokens don't stack vertically
+            const r = clamp(rMid + ((i % 2) === 0 ? -rHalf * 0.55 : rHalf * 0.55), band.r0 + 8, band.r1 - 8);
+            const deg = a0 + pad + step * (i + 0.5);
+            const p = polar(r, deg);
+
             const name = item.drugName.length > 11 ? `${item.drugName.slice(0, 10)}…` : item.drugName;
             const note = item.mealRule === 'BEFORE_FOOD' ? 'before food' : null;
+            const crowded = cell.items.length >= 5;
             const fontPx = crowded ? 9 : 10.5;
             const tagW = Math.round(clamp(Math.max(textWidth(name, fontPx), note ? textWidth(note, 8) : 0) + 14, 40, crowded ? 58 : 78));
             const tagH = note ? 26 : 18;
+
             out.push({
                 key: `${item.lineId}-${cell.slot}-${cell.track}-${i}`,
                 lineId: item.lineId,
@@ -107,18 +141,24 @@ function buildTokens(schedule: CompiledSchedule, glyphs: ReadonlyMap<string, Gly
                 track: cell.track,
                 x: p.x,
                 y: p.y,
-                plateR,
-                haloR: plateR + 7,
-                glyphSize: plateR * 1.3,
-                tagSide: side,
+                deg,
+                plateR: clamp(Math.round(r * 0.20), 9, 26),
+                haloR: 0, // set below
+                glyphSize: 0, // set below
                 tagW,
                 tagH,
-                tagY: plateR + 3 + tagH / 2,
+                tagY: 14 + tagH / 2,
                 note,
                 geometry: item.geometry,
                 glyph: glyphs.get(item.lineId) ?? FALLBACK,
+                slotColor: SLOT_COLOR[cell.slot],
             });
         });
+    }
+    // Second pass: derive haloR and glyphSize from plateR
+    for (const t of out) {
+        t.haloR = t.plateR + 7;
+        t.glyphSize = t.plateR * 1.3;
     }
     return out;
 }
@@ -139,6 +179,7 @@ function buildHub(schedule: CompiledSchedule, glyphs: ReadonlyMap<string, GlyphS
             y: p.y,
             plateR,
             glyphSize: plateR * 1.3,
+            slotColor: '#6b7280',
         };
     });
 }
@@ -194,37 +235,36 @@ export function DayRing({ schedule, glyphs, activeLineId, lang, onSelect, onHove
     );
 
     return (
-        <section className="mr-card mr-ring-card" aria-label="24-hour medication ring">
-            <header className="mr-card-header mr-ring-head">
-                <div className="mr-ring-head-text">
-                    <span className="mr-badge mr-badge-amber">UMS 4-period dial</span>
-                    <h2 className="f-display mr-ring-title">24-hour medication ring</h2>
-                    <p className="f-data mr-ring-sub">
-                        {scheduledCount} scheduled {scheduledCount === 1 ? 'token' : 'tokens'} · {prnMeds.length} as-needed · tap a token to read the label
-                    </p>
+        <section className="mr-bento-card" aria-label="24-hour medication ring">
+            <div className="border-b border-stone-200 px-4 py-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 whitespace-nowrap">UMS 4-PERIOD DIAL</span>
+                    <h2 className="f-display text-[18px] font-bold text-[var(--ink)]">24-hour medication ring</h2>
+                    <p className="f-data text-[10px] text-stone-500 uppercase tracking-wider">{scheduledCount} scheduled · {prnMeds.length} as-needed</p>
                 </div>
+                <span className="f-data text-[9px] text-stone-400 uppercase tracking-wider">hero</span>
+            </div>
 
-                <div className="mr-ring-slots" role="group" aria-label="Dose periods">
-                    {UMS_SLOTS.map((slot) => {
-                        const count = tokens.filter((t) => t.slot === slot).length;
-                        const isActive = activeSlot === slot;
-                        return (
-                            <button
-                                key={slot}
-                                type="button"
-                                className="tactile mr-slot-chip"
-                                aria-pressed={isActive}
-                                disabled={count === 0}
-                                aria-label={`${slotName(slot, lang)}, ${formatWindow(slot)}, ${count} ${count === 1 ? 'dose' : 'doses'}`}
-                                onClick={() => pickSlot(slot)}
-                            >
-                                <span className="mr-slot-chip-name">{slotName(slot, lang)}</span>
-                                <span className="f-data mr-slot-chip-count">{count}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-            </header>
+            <div role="group" aria-label="Dose periods" className="grid grid-cols-4 gap-2 my-3">
+                {UMS_SLOTS.map((slot) => {
+                    const count = tokens.filter((t) => t.slot === slot).length;
+                    const isActive = activeSlot === slot;
+                    return (
+                        <button
+                            key={slot}
+                            type="button"
+                            className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg border transition-colors text-[11px] font-bold ${SLOT_PILL[slot][isActive ? 'active' : 'idle']}`}
+                            aria-pressed={isActive}
+                            disabled={count === 0}
+                            aria-label={`${slotName(slot, lang)}, ${formatWindow(slot)}, ${count} ${count === 1 ? 'dose' : 'doses'}`}
+                            onClick={() => pickSlot(slot)}
+                        >
+                            <span className="font-bold whitespace-nowrap">{slotName(slot, lang)}</span>
+                            <span className="f-data text-[10px] whitespace-nowrap">{count}</span>
+                        </button>
+                    );
+                })}
+            </div>
 
             <div className="mr-ring-wrap">
                 <svg viewBox="-45 -45 590 590" className="mr-ring-svg" role="group" aria-label="Day ring with one token per scheduled dose">
@@ -305,11 +345,17 @@ export function DayRing({ schedule, glyphs, activeLineId, lang, onSelect, onHove
                     {/* Scheduled tokens: white plate + real pill geometry + name tag. */}
                     {tokens.map((t) => {
                         const isActive = t.lineId === activeLineId;
-                        const angle = ((Math.atan2(t.x - RING.cx, -(t.y - RING.cy)) / RAD) + 360) % 360;
-                        const ux = Math.sin(angle * RAD);
-                        const uy = -Math.cos(angle * RAD);
-                        const tx = ux * t.tagSide * t.tagY;
-                        const ty = uy * t.tagSide * t.tagY;
+                        // Tangential label placement: labels spread along the arc direction instead of
+                        // converging radially, so same-slot tokens never collide.
+                        const rad = t.deg * RAD;
+                        const tanX = Math.cos(rad);
+                        const tanY = Math.sin(rad);
+                        const tx = tanX * t.tagY;
+                        const ty = tanY * t.tagY;
+                        const leaderX1 = Math.sin(rad) * t.plateR;
+                        const leaderY1 = -Math.cos(rad) * t.plateR;
+                        const leaderX2 = tanX * (t.plateR + 3);
+                        const leaderY2 = tanY * (t.plateR + 3);
                         return (
                             <g
                                 key={t.key}
@@ -338,7 +384,18 @@ export function DayRing({ schedule, glyphs, activeLineId, lang, onSelect, onHove
                                 {t.track === 'INNER' && (
                                     <circle r={n2(t.plateR - 3)} fill="none" stroke="var(--ink)" strokeWidth="1.2" strokeDasharray="2 2.4" opacity="0.5" />
                                 )}
-                                <PillGlyph glyph={t.glyph} geometry={t.geometry} size={Math.round(t.glyphSize)} prefix={uid} />
+                                <PillGlyph glyph={t.glyph} geometry={t.geometry} size={Math.round(t.glyphSize)} prefix={uid} slotColor={t.slotColor} />
+                                {/* Leader line from token edge to label */}
+                                <line
+                                    x1={n2(leaderX1)}
+                                    y1={n2(leaderY1)}
+                                    x2={n2(leaderX2)}
+                                    y2={n2(leaderY2)}
+                                    stroke="var(--ink-2)"
+                                    strokeWidth="1"
+                                    opacity="0.5"
+                                    strokeLinecap="round"
+                                />
                                 <g transform={`translate(${tx.toFixed(2)}, ${ty.toFixed(2)})`} aria-hidden="true">
                                     <rect
                                         x={n2(-t.tagW / 2)}
@@ -408,7 +465,7 @@ export function DayRing({ schedule, glyphs, activeLineId, lang, onSelect, onHove
                             >
                                 {isActive && <circle r={n2(h.plateR + 6)} className="mr-halo" fill="rgba(245, 158, 11, 0.25)" stroke="var(--focus)" strokeWidth="3" />}
                                 <circle r={n2(h.plateR)} fill="#ffffff" stroke="var(--ink)" strokeWidth={isActive ? 2.75 : 1.75} />
-                                <PillGlyph glyph={h.glyph} geometry={h.geometry} size={Math.round(h.glyphSize)} prefix={uid} />
+                                <PillGlyph glyph={h.glyph} geometry={h.geometry} size={Math.round(h.glyphSize)} prefix={uid} slotColor={h.slotColor} />
                             </g>
                         );
                     })}
@@ -454,7 +511,7 @@ export function DayRing({ schedule, glyphs, activeLineId, lang, onSelect, onHove
                                     >
                                         <svg width="20" height="20" viewBox="-13 -13 26 26" aria-hidden="true">
                                             <GlyphDefs prefix={prefix} />
-                                            <PillGlyph glyph={glyphs.get(m.lineId) ?? FALLBACK} geometry={m.prn?.geometry ?? FALLBACK_GEOMETRY} size={22} prefix={prefix} />
+                                            <PillGlyph glyph={glyphs.get(m.lineId) ?? FALLBACK} geometry={m.prn?.geometry ?? FALLBACK_GEOMETRY} size={22} prefix={prefix} slotColor="#6b7280" />
                                         </svg>
                                         <span className="mr-prn-chip-name">{[m.drugName, m.strength].filter(Boolean).join(' ')}</span>
                                         {m.prn?.indication && <span className="mr-prn-chip-note">{m.prn.indication}</span>}

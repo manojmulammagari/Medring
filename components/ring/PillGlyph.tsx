@@ -51,9 +51,11 @@ interface UnitProps {
     fraction: number;
     prefix: string;
     uid: string;
+    /** Optional time-of-day colour override. */
+    slotColor?: string;
 }
 
-function Unit({ glyph, s, fraction, prefix, uid }: UnitProps) {
+function Unit({ glyph, s, fraction, prefix, uid, slotColor }: UnitProps) {
     const d = shapePath(glyph.shape, s);
     const full = fraction >= 0.999;
     const w = 2 * s * fraction;
@@ -75,7 +77,7 @@ function Unit({ glyph, s, fraction, prefix, uid }: UnitProps) {
                 </>
             )}
             <g clipPath={full ? undefined : `url(#${fillClip})`}>
-                <path d={d} style={{ fill: `var(--hue-${glyph.hue})` }} />
+                <path d={d} style={{ fill: slotColor ?? `var(--hue-${glyph.hue})` }} />
                 {pattern && <path d={d} style={{ fill: pattern }} />}
                 <path d={d} fill="none" style={INK} />
             </g>
@@ -114,10 +116,12 @@ export interface PillGlyphProps {
     /** Diameter in SVG user units. The glyph is centred on (0,0). */
     size: number;
     prefix: string;
+    /** Optional time-of-day colour override (shape+pattern redundancy still applies). */
+    slotColor?: string;
 }
 
 /** Real pill geometry: ½ shows a scored half with the missing half dashed; 2× stacks two units; badge states the exact amount. */
-export function PillGlyph({ glyph, geometry, size, prefix }: PillGlyphProps) {
+export function PillGlyph({ glyph, geometry, size, prefix, slotColor }: PillGlyphProps) {
     const uid = useId().replace(/:/g, '');
     const s = size / 2;
     if (geometry.kind === 'VOLUME') {
@@ -137,7 +141,7 @@ export function PillGlyph({ glyph, geometry, size, prefix }: PillGlyphProps) {
         <g>
             {units.map((fraction, i) => (
                 <g key={i} transform={`translate(${(offsets[i]?.[0] ?? 0) * s} ${(offsets[i]?.[1] ?? 0) * s})`}>
-                    <Unit glyph={glyph} s={s * scale} fraction={fraction} prefix={prefix} uid={`${uid}${i}`} />
+                    <Unit glyph={glyph} s={s * scale} fraction={fraction} prefix={prefix} uid={`${uid}${i}`} slotColor={slotColor} />
                 </g>
             ))}
             <Badge label={geometry.label} s={s} />

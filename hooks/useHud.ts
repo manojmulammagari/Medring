@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import type { Lang } from '@/lib/phrasebook';
 
 /** localStorage-backed state; loads after mount (no hydration mismatch) and never throws if storage is blocked. */
 export function usePersistentState<T>(key: string, initial: T): [T, Dispatch<SetStateAction<T>>] {
@@ -28,12 +29,13 @@ export function usePersistentState<T>(key: string, initial: T): [T, Dispatch<Set
 export interface HudHandlers {
     onCalm(): void;
     onContrast(): void;
+    onElder(): void;
     onSpeak(): void;
     onPrev(): void;
     onNext(): void;
     onPreset(n: 1 | 2 | 3): void;
     onPrint(): void;
-    onLang(): void;
+    onLang(l?: Lang): void;
     onScan(): void;
     onEscape(): void;
 }
@@ -55,6 +57,11 @@ export function useHudHotkeys(handlers: HudHandlers, enabled = true): void {
             if (e.repeat && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
             const h = ref.current;
             switch (e.key) {
+                case 'e':
+                case 'E':
+                    e.preventDefault();
+                    h.onElder();
+                    break;
                 case 'c':
                 case 'C':
                     e.preventDefault();

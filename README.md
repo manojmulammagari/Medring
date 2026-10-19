@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://via.placeholder.com/800x400/F7F6F2/09090B?text=MedRing+Banner+(Add+Your+Thumbnail+Here)" alt="MedRing Hero Banner" width="100%">
+  <img src="https://github.com/user-attachments/assets/12ad9888-630f-471b-944d-b3941f3d3dcf" width="100%">
   
   # 💊 MedRing
   **Zero-Hallucination Clinical Cockpit & 24-Hour Medication Ring**
@@ -13,9 +13,6 @@
     <em>Built to eliminate post-op medication errors through deterministic UI/UX.</em>
   </p>
 </div>
-
----<img width="2752" height="1536" alt="Gemini_Generated_Image_4faten4faten4fat" src="https://github.com/user-attachments/assets/12ad9888-630f-471b-944d-b3941f3d3dcf" />
-<img width="2752" height="1536" alt="Gemini_Generated_Image_4faten4faten4fat" src="https://github.com/user-attachments/assets/1382a24d-4d95-4929-a919-b82e36ab72a7" />
 
 
 ## 💡 The Inspiration

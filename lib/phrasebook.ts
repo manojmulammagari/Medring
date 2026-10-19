@@ -23,6 +23,12 @@ export interface UiStrings {
     labelDirections: string;
     questions: string;
     disclaimer: string;
+    takeDose: string;
+    taken: string;
+    timeOfDay: string;
+    originalLine: string;
+    readAloud: string;
+    sourceSpanVerified: string;
 }
 
 const T: Record<Lang, UiStrings> = {
@@ -39,6 +45,12 @@ const T: Record<Lang, UiStrings> = {
         questions: 'Questions for my pharmacist',
         disclaimer:
             'This sheet restates the original label. It is not medical advice. If anything differs from your label, follow the label and ask your pharmacist.',
+        takeDose: 'Take dose',
+        taken: 'Taken ✓',
+        timeOfDay: 'Time of day stated on the label',
+        originalLine: 'Original line',
+        readAloud: 'Read aloud',
+        sourceSpanVerified: 'Source span verified',
     },
     hi: {
         rightNow: 'अभी',
@@ -53,6 +65,12 @@ const T: Record<Lang, UiStrings> = {
         questions: 'फार्मासिस्ट के लिए सवाल',
         disclaimer:
             'यह शीट मूल लेबल को ही दोहराती है। यह चिकित्सकीय सलाह नहीं है। यदि कुछ भी आपके लेबल से अलग हो, तो लेबल का पालन करें और अपने फार्मासिस्ट से पूछें।',
+        takeDose: 'लें',
+        taken: 'लिया ✓',
+        timeOfDay: 'लेबल पर दिन का समय बताया गया',
+        originalLine: 'मूल पंक्ति',
+        readAloud: 'ज़ोर से पढ़ें',
+        sourceSpanVerified: 'स्रोत स्पैन सत्यापित',
     },
     es: {
         rightNow: 'Ahora',
@@ -67,6 +85,12 @@ const T: Record<Lang, UiStrings> = {
         questions: 'Preguntas para mi farmacéutico',
         disclaimer:
             'Esta hoja repite la etiqueta original. No es consejo médico. Si algo difiere de su etiqueta, siga la etiqueta y pregunte a su farmacéutico.',
+        takeDose: 'Tomar dosis',
+        taken: 'Tomado ✓',
+        timeOfDay: 'Hora del día indicada en la etiqueta',
+        originalLine: 'Línea original',
+        readAloud: 'Leer en voz alta',
+        sourceSpanVerified: 'Origen del span verificado',
     },
 };
 export const ui = (lang: Lang): UiStrings => T[lang];

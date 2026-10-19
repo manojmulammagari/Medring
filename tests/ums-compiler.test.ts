@@ -174,8 +174,8 @@ describe('readFrequency', () => {
         expect(readFrequency('od')).toMatchObject({ counts: [1], hasOd: true });
     });
     it('reads intervals, PRN, time words, and combined signals', () => {
-        expect(readFrequency('every 8 hours')).toMatchObject({ intervalHours: 8, counts: [] });
-        expect(readFrequency('q8h').intervalHours).toBe(8);
+        expect(readFrequency('every 8 hours')).toMatchObject({ intervalHours: null, counts: [], timeSlots: ['MORNING', 'NOON', 'BEDTIME'] });
+        expect(readFrequency('q12h')).toMatchObject({ intervalHours: null, counts: [], timeSlots: ['MORNING', 'BEDTIME'] });
         expect(readFrequency('as needed for pain').prn).toBe(true);
         expect(readFrequency('SOS').prn).toBe(true);
         expect(readFrequency('once daily at bedtime')).toMatchObject({ counts: [1], timeSlots: ['BEDTIME'] });
@@ -295,12 +295,19 @@ describe('compileDocument: PRN', () => {
 /* ───────────── compiler: AMBIGUITY_HALT ───────────── */
 
 describe('compileDocument: halts (restate, never guess)', () => {
-    it('halts strict interval dosing and quotes it in the pharmacist question', () => {
+    it('maps q8h/q12h intervals to UMS slots instead of halting', () => {
         const m = one({ drugName: 'Amoxicillin', strength: '500 mg', dose: '1 capsule', frequency: 'every 8 hours' });
+        expect(m.status).toBe('SCHEDULED');
+        expect(m.doses.map((d) => d.slot)).toEqual(['MORNING', 'NOON', 'BEDTIME']);
+        expect(m.doses.every((d) => d.quantity === 1)).toBe(true);
+        expect(m.halts).toEqual([]);
+    });
+    it('halts strict interval dosing that is not 8 or 12 hourly', () => {
+        const m = one({ drugName: 'Amoxicillin', strength: '500 mg', dose: '1 capsule', frequency: 'every 6 hours' });
         expect(m.status).toBe('HALTED');
         expect(codes(m)).toEqual(['INTERVAL_REQUIRES_CLOCK_TIMES']);
         expect(m.doses).toEqual([]);
-        expect(m.pharmacistQuestion).toContain('every 8 hours');
+        expect(m.pharmacistQuestion).toContain('every 6 hours');
     });
     it('halts a strength with no tablet count', () => {
         expect(codes(one({ drugName: 'Metformin', dose: '500 mg', frequency: 'twice daily' }))).toEqual(['QUANTITY_MISSING']);

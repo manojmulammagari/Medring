@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Eye, TriangleAlert, Volume2, VolumeX } from 
 import type { CompiledMedication, CompiledSchedule, UmsSlot } from '@/types/ums';
 import { GlyphDefs, PillGlyph } from '@/components/ring/PillGlyph';
 import { formatWindow } from '@/lib/ring-geometry';
-import { describeDose, slotName, ui, type Lang } from '@/lib/phrasebook';
+import { describeDose, slotName, ui, LANGS, type Lang } from '@/lib/phrasebook';
 import { entriesForSlot, shiftCalmSlot, type GlyphStyle } from '@/lib/ui-model';
 
 const FALLBACK: GlyphStyle = { shape: 'CIRCLE', pattern: 'SOLID', hue: 0 };
@@ -19,6 +19,7 @@ interface Props {
     onShift(dir: 1 | -1): void;
     onSpeak(): void;
     onExit(): void;
+    onLang(l: Lang): void;
 }
 
 function SlotList({ schedule, glyphs, lang, slot, uid }: { schedule: CompiledSchedule; glyphs: ReadonlyMap<string, GlyphStyle>; lang: Lang; slot: UmsSlot; uid: string }) {
@@ -42,7 +43,7 @@ function SlotList({ schedule, glyphs, lang, slot, uid }: { schedule: CompiledSch
 }
 
 /** Zero-noise single-card view. Safety items (as-needed medicines, pharmacist chips) stay visible. */
-export function CalmCard({ schedule, glyphs, lang, slot, speaking, onShift, onSpeak, onExit }: Props) {
+export function CalmCard({ schedule, glyphs, lang, slot, speaking, onShift, onSpeak, onExit, onLang }: Props) {
     const uid = useId().replace(/:/g, '');
     const T = ui(lang);
     const next = slot ? shiftCalmSlot(schedule, slot, 1) : null;
@@ -59,6 +60,7 @@ export function CalmCard({ schedule, glyphs, lang, slot, speaking, onShift, onSp
                 </div>
                 <div className="flex gap-2">
                     <button type="button" className={btn} aria-pressed={speaking} onClick={onSpeak}>{speaking ? <VolumeX size={22} aria-hidden /> : <Volume2 size={22} aria-hidden />} Read aloud</button>
+                    <button type="button" className={btn} onClick={() => onLang(lang === 'en' ? 'hi' : lang === 'hi' ? 'es' : 'en')}><span className="text-[var(--ink-2)] font-bold text-xs uppercase">{lang.toUpperCase()}</span> <span className="mr-kbd">L</span></button>
                     <button type="button" className={btn} onClick={onExit}><Eye size={22} aria-hidden /> Full view</button>
                 </div>
             </div>

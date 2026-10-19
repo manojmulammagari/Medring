@@ -4,25 +4,392 @@
 @source "../lib";
 
 :root {
-  --paper: #f6f4ee;
+  /* Warm Clinical Braun / Teen Engineering surface palette */
+  --paper: #f6f5f0;
+  /* warm alabaster paper */
   --paper-2: #eae6dc;
+  /* card ground */
   --card: #ffffff;
+  /* elevated bento card */
   --ink: #0f172a;
+  /* deep obsidian ink */
   --ink-2: #475569;
-  --amber: #f59e0b;
-  --amber-bg: #fffbeb;
+  /* secondary ink */
+  --amber: #d97706;
+  /* warm sunrise amber */
+  --amber-bg: #fdf3e3;
+  /* amber soft surface */
   --amber-ink: #78350f;
   --danger: #e11d48;
+  /* vermilion / safety guardrail */
+  --danger-bg: #ffe4e6;
   --success: #059669;
   --focus: #2563eb;
-  --hue-0: #f59e0b;
-  --hue-1: #0284c7;
-  --hue-2: #e11d48;
-  --hue-3: #7c3aed;
-  --stroke: 2.25px;
+  --stroke: 2px;
   --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: Georgia, 'Times New Roman', serif;
   --font-data: 'JetBrains Mono', 'Consolas', ui-monospace, monospace;
+
+  /* Semantic time-of-day chromatic coding (shape+pattern redundancy) */
+  --hue-morning: #d97706;
+  /* Sunrise Amber */
+  --hue-morning-bg: #fef3c7;
+  --hue-noon: #0284c7;
+  /* Clinical Sky Teal */
+  --hue-noon-bg: #e0f2fe;
+  --hue-evening: #ea580c;
+  /* Sunset Coral / Terracotta */
+  --hue-evening-bg: #ffedd5;
+  --hue-bedtime: #4f46e5;
+  /* Deep Indigo Slate */
+  --hue-bedtime-bg: #e0e7ff;
+  --hue-guardrail: #e11d48;
+  /* High-alert Vermilion / Rose */
+  --hue-guardrail-bg: #ffe4e6;
+}
+
+[data-contrast='high'] {
+  --paper: #ffffff;
+  --paper-2: #f1f5f9;
+  --card: #ffffff;
+  --ink: #000000;
+  --ink-2: #000000;
+  --amber: #ffd000;
+  --amber-bg: #fffbeb;
+  --amber-ink: #000000;
+  --danger: #e11d48;
+  --danger-bg: #ffe4e6;
+  --focus: #0000ff;
+  --stroke: 3px;
+}
+
+[data-elder='true'] {
+  --font-size-base: 17px;
+  --line-height-base: 1.75;
+  --touch-min: 48px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   Bento Cockpit — 12-col Swiss grid, zero-scroll above the fold               ════════════════════════════════════════════════════════════════════ */
+
+.mr-bento {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 4.5rem;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.875rem;
+  align-items: start;
+}
+
+.mr-bento>* {
+  min-width: 0;
+}
+
+/* Full-width bands span all 12 cols */
+.mr-col-12 {
+  grid-column: span 12;
+}
+
+.mr-col-4 {
+  grid-column: span 4;
+}
+
+.mr-col-5 {
+  grid-column: span 5;
+}
+
+.mr-col-3 {
+  grid-column: span 3;
+}
+
+@media (max-width: 1023px) {
+  .mr-bento {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  .mr-col-12,
+  .mr-col-4,
+  .mr-col-5,
+  .mr-col-3 {
+    grid-column: span 1;
+  }
+}
+
+/* Bento card surface */
+.mr-bento-card {
+  background-color: var(--card);
+  border: 1px solid #e2e0d8;
+  border-radius: 16px;
+  box-shadow:
+    0 4px 20px -2px rgba(24, 24, 27, 0.05),
+    0 1px 3px 0 rgba(24, 24, 27, 0.03);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* High contrast mode: crisper borders */
+[data-contrast='high'] .mr-bento-card {
+  border: 2px solid #000000;
+  border-radius: 8px;
+  box-shadow: 4px 4px 0px #000000;
+}
+
+/* Keycap hardware-style shortcut badges */
+.mr-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 22px;
+  border: 1px solid #b9b7b2;
+  border-bottom: 2px solid #9a9893;
+  background: #f3f2ed;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 1px 2px rgba(24, 24, 27, 0.12);
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #3a3836;
+  padding: 0 5px;
+  user-select: none;
+}
+
+.mr-kbd:active {
+  box-shadow: inset 0 2px 3px rgba(24, 24, 27, 0.16);
+  background: #eae6dc;
+  border-bottom-width: 1px;
+}
+
+/* Time-of-day semantic pills (shape+pattern redundancy — colour never the only signal) */
+.mr-slot-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 10px;
+  border: 1.5px solid currentColor;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-family: var(--font-ui);
+  min-height: 40px;
+}
+
+.mr-slot-pill .mr-slot-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.mr-slot-morning {
+  color: #b45309;
+  background: #fef3c7;
+  border-color: #d97706;
+}
+
+.mr-slot-noon {
+  color: #0369a1;
+  background: #e0f2fe;
+  border-color: #0284c7;
+}
+
+.mr-slot-evening {
+  color: #c2410c;
+  background: #ffedd5;
+  border-color: #ea580c;
+}
+
+.mr-slot-bedtime {
+  color: #4338ca;
+  background: #e0e7ff;
+  border-color: #4f46e5;
+}
+
+.mr-slot-morn-icon {
+  background: repeating-linear-gradient(45deg, #d97706, #d97706 4px, transparent 4px, transparent 8px);
+}
+
+.mr-slot-noon-icon {
+  background: radial-gradient(circle at 30% 30%, #0284c7 2px, transparent 2px);
+  background-size: 6px 6px;
+}
+
+.mr-slot-evening-icon {
+  background: repeating-linear-gradient(45deg, transparent, transparent 4px, #ea580c 4px, #ea580c 8px);
+}
+
+.mr-slot-bedtime-icon {
+  background: radial-gradient(circle at 50% 50%, #4f46e5 2px, transparent 2px);
+  background-size: 6px 6px;
+}
+
+/* Clinical provenance chip */
+.mr-provenance-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: var(--card);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  min-height: 28px;
+}
+
+.mr-provenance-chip--verbatim {
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* Expanded Telemetry Dock */
+.mr-telemetry-dock {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 14px;
+  border: 2px solid var(--ink);
+  background: var(--card);
+  box-shadow: 4px 4px 0px var(--ink), 0 -8px 24px rgba(15, 23, 42, 0.18);
+  min-height: 52px;
+}
+
+.mr-telemetry-dock .mr-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.mr-telemetry-dock dt {
+  margin: 0;
+  color: var(--ink-2);
+  font-family: var(--font-data);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.mr-telemetry-dock dd {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.mr-telemetry-dock dd b {
+  color: var(--amber);
+}
+
+.mr-telemetry-dock .mr-spark {
+  width: 96px;
+  height: 20px;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  justify-content: center;
+  padding-bottom: 4px;
+}
+
+.mr-telemetry-dock .mr-spark-bar {
+  flex: 1;
+  min-height: 4px;
+  background: #e2e0d8;
+  border-radius: 2px 2px 0 0;
+}
+
+.mr-telemetry-dock .mr-spark-bar--fill {
+  background: var(--amber);
+}
+
+/* Live status pulse badge */
+.mr-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: var(--card);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.mr-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.6);
+  animation: mr-pulse 2s infinite;
+}
+
+@keyframes mr-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.6);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+  }
+}
+
+/* Focus rings */
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* Calm mode surface */
+[data-calm='true'] .mr-bento-card {
+  background: #eef3ec;
+  border-color: #c7d2c3;
+}
+
+[data-calm='true'] {
+  --paper: #eef3ec;
+  --card: #eef3ec;
+}
+
+[data-contrast='high'][data-calm='true'] {
+  --paper: #09090b;
+  --card: #09090b;
+  --ink: #ffffff;
+  --ink-2: #facc15;
+}
+
+/* Elder large type */
+[data-elder='true'] {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+[data-elder='true'] .touch-target {
+  min-height: var(--touch-min);
 }
 
 [data-contrast='high'] {
@@ -134,11 +501,9 @@ body {
 }
 
 .mr-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  background-color: var(--paper);
-  border-bottom: 2px solid var(--ink);
+  position: static;
+  background-color: transparent;
+  border-bottom: none;
 }
 
 .mr-topbar-row {
@@ -235,32 +600,6 @@ body {
   font-size: 1.05rem;
 }
 
-.mr-studio-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.25rem;
-  align-items: start;
-}
-
-.mr-studio-grid > * {
-  min-width: 0;
-}
-
-@media (min-width: 960px) {
-  .mr-studio-grid {
-    grid-template-columns: minmax(0, 320px) minmax(0, 1fr) minmax(0, 320px);
-    gap: 1.1rem;
-  }
-}
-
-/* Award-winning desktop proportions: source · dial · clinical detail. */
-@media (min-width: 1280px) {
-  .mr-studio-grid {
-    grid-template-columns: 340px minmax(440px, 1fr) 360px;
-    gap: 1.25rem;
-  }
-}
-
 .mr-col {
   min-width: 0;
   display: flex;
@@ -325,7 +664,7 @@ body {
   align-items: center;
   gap: 0.3rem;
   padding: 0.2rem 0.55rem;
-  border-radius: 999px;
+  border-radius: 6px;
   border: 1.5px solid var(--ink);
   font-family: var(--font-data);
   font-size: 0.72rem;
@@ -508,119 +847,6 @@ body {
   margin-top: 0.1rem;
 }
 
-/* ═══════════════ Compact executive telemetry bar (46px, never 35% of screen) ═══════════════ */
-
-.mr-telemetry {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
-  height: 46px;
-  background-color: #0f172a;
-  color: #e2e8f0;
-  border-top: 3px solid var(--amber);
-  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.25);
-}
-
-.mr-telemetry-row {
-  display: flex;
-  align-items: center;
-  gap: 1.15rem;
-  height: 100%;
-  max-width: 1500px;
-  margin: 0 auto;
-  padding: 0 1.1rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
-}
-
-.mr-telemetry-stats {
-  display: flex;
-  align-items: center;
-  gap: 1.15rem;
-  margin: 0;
-  padding: 0;
-}
-
-.mr-metric {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-}
-
-.mr-metric dt {
-  margin: 0;
-  color: #94a3b8;
-  font-family: var(--font-data);
-  font-size: 0.64rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.mr-metric dd {
-  margin: 0;
-  color: #ffffff;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.mr-metric dd b {
-  color: var(--amber);
-  font-weight: 800;
-}
-
-.mr-metric-brand dt {
-  color: var(--amber);
-}
-
-.mr-metric-brand dd {
-  color: #cbd5e1;
-  font-weight: 500;
-}
-
-.mr-telemetry-more {
-  position: relative;
-  margin-left: auto;
-}
-
-.mr-telemetry-more summary {
-  cursor: pointer;
-  list-style: none;
-  color: #cbd5e1;
-  font-family: var(--font-data);
-  font-size: 0.66rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  border: 1px solid #334155;
-  border-radius: 999px;
-  padding: 0.22rem 0.65rem;
-}
-
-.mr-telemetry-more summary::-webkit-details-marker {
-  display: none;
-}
-
-.mr-telemetry-more p {
-  position: absolute;
-  right: 0;
-  bottom: 165%;
-  width: min(720px, 88vw);
-  white-space: normal;
-  margin: 0;
-  background-color: #0f172a;
-  border: 2px solid var(--amber);
-  border-radius: 10px;
-  padding: 0.7rem 0.85rem;
-  font-size: 0.78rem;
-  line-height: 1.45;
-  color: #e2e8f0;
-  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.55);
-}
-
 /* ═══════════════ Modal / print ═══════════════ */
 
 dialog {
@@ -639,6 +865,7 @@ dialog::backdrop {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {

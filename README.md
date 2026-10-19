@@ -14,7 +14,9 @@
   </p>
 </div>
 
----
+---<img width="2752" height="1536" alt="Gemini_Generated_Image_4faten4faten4fat" src="https://github.com/user-attachments/assets/12ad9888-630f-471b-944d-b3941f3d3dcf" />
+<img width="2752" height="1536" alt="Gemini_Generated_Image_4faten4faten4fat" src="https://github.com/user-attachments/assets/1382a24d-4d95-4929-a919-b82e36ab72a7" />
+
 
 ## 💡 The Inspiration
 Hospital discharge sheets are dangerous. They rely on cryptic shorthand (`1-0-1`, `AC`, `PC`, `TDS`, `BBF`) that post-op patients, elders, and non-native speakers routinely misread. While other AI apps try to "summarize" or *guess* what a label means—which is a severe clinical liability—we realized this wasn't an AI generation problem. **It’s a UI/UX mapping problem.** 

@@ -80,10 +80,10 @@ const COUNT_RULES: ReadonlyArray<readonly [RegExp, 1 | 2 | 3 | 4]> = [
 const INTERVAL_RE = /\b(?:every\s+(\d{1,2})\s*(?:hours?|hrs?|h)|q\s?(\d{1,2})\s?h(?:rs?)?)\b/i;
 
 const TIME_WORD_RE: Record<UmsSlot, RegExp> = {
-    MORNING: /\b(?:morning|qam)\b/i,
+    MORNING: /\b(?:morning|mane|qam)\b/i,
     NOON: /\b(?:noon|midday|afternoon|lunch\s?time)\b/i,
     EVENING: /\b(?:evening|qpm)\b/i,
-    BEDTIME: /\b(?:bed\s?time|before\s+bed|qhs|hs|at\s+night|every\s+night|nightly|night)\b/i,
+    BEDTIME: /\b(?:bed\s?time|before\s+bed|qhs|hs|at\s+night|every\s+night|nightly|night|nocte)\b/i,
 };
 
 const PRN_RE = /\b(?:prn|sos|as needed|as required|when needed|when required|if needed|if required|(?:at|on)\s+(?:the\s+)?(?:first sign|onset)\s+of)\b/i;
@@ -91,12 +91,12 @@ const PRN_STRIP_RE = /\b(?:p\.?r\.?n\.?|s\.?o\.?s\.?|as needed|as required|when 
 const INDICATION_RE =
     /\b(?:for|to relieve|to treat|to control|(?:at|on)\s+(?:the\s+)?(?:first sign|onset|start)\s+of|during|upon)\s+([A-Za-z][A-Za-z '’ ]{2,60})/i;
 
-const MEAL_BEFORE_RE = /\b(?:before\s+(?:food|meals?|eating|breakfast|lunch|dinner|supper)|(?:on\s+an?\s+)?empty\s+stomach|fasting)\b/i;
+const MEAL_BEFORE_RE = /\b(?:before\s+(?:food|meals?|eating|breakfast|lunch|dinner|supper)|(?:on\s+an?\s+)?empty\s+stomach|fasting|30\s*min\s*before)\b/i;
 const MEAL_AFTER_RE = /\bafter\s+(?:food|meals?|eating|breakfast|lunch|dinner|supper)\b/i;
 const MEAL_WITH_RE = /\b(?:with\s+(?:food|meals?|a\s+meal|milk|breakfast|lunch|dinner|supper|a\s+snack)|during\s+meals?)\b/i;
 /** Shorthand is matched only in frequency/timing fields ("AF" in free text can mean atrial fibrillation). */
-const SHORT_BEFORE_RE = /(?:^|[\s;,])(?:ac|bf|b\/f|a\/c)(?=$|[\s;,.])/i;
-const SHORT_AFTER_RE = /(?:^|[\s;,])(?:pc|af|a\/f|p\/c)(?=$|[\s;,.])/i;
+const SHORT_BEFORE_RE = /(?:^|[\s;,])(?:ac|bf|b\/f|a\/c|bbf)(?=$|[\s;,.])/i;
+const SHORT_AFTER_RE = /(?:^|[\s;,])(?:pc|af|a\/f|p\/c|abf)(?=$|[\s;,.])/i;
 
 /* ═══════════════════════════ Text utilities ═══════════════════════════ */
 
@@ -261,6 +261,12 @@ export interface FrequencyReading {
     eyeContext: boolean;
 }
 
+/** q12h → Morning + Bedtime; q8h → Morning + Noon + Bedtime (UMS convention for 12/8-hour intervals). */
+const INTERVAL_SLOTS: Record<number, UmsSlot[]> = {
+    12: ['MORNING', 'BEDTIME'],
+    8: ['MORNING', 'NOON', 'BEDTIME'],
+};
+
 /** Reads frequency signals from free text: PRN, M-A-N pattern, once/BID/TID/QID, "every N hours", time words. */
 export function readFrequency(text: string): FrequencyReading {
     const t = normalize(text);
@@ -274,6 +280,10 @@ export function readFrequency(text: string): FrequencyReading {
         work = work.replace(INTERVAL_RE, ' ');
     }
 
+    // Map 12-hourly / 8-hourly intervals to UMS slots so they never hit the strict-interval halt.
+    const intervalSlots: UmsSlot[] = intervalHours !== null && INTERVAL_SLOTS[intervalHours] ? INTERVAL_SLOTS[intervalHours]! : [];
+    if (intervalSlots.length > 0) intervalHours = null;
+
     const counts: Array<1 | 2 | 3 | 4> = [];
     for (const [re, n] of COUNT_RULES) {
         if (re.test(work)) {
@@ -283,12 +293,15 @@ export function readFrequency(text: string): FrequencyReading {
     }
     counts.sort((a, b) => a - b);
 
+    const wordSlots = UMS_SLOTS.filter((slot) => TIME_WORD_RE[slot].test(work));
+    const timeSlots = [...new Set([...wordSlots, ...intervalSlots])];
+
     return {
         prn: PRN_RE.test(t),
         pattern,
         counts,
         intervalHours,
-        timeSlots: UMS_SLOTS.filter((slot) => TIME_WORD_RE[slot].test(work)),
+        timeSlots,
         hasOd: /\bod\b/.test(t),
         eyeContext: /\b(?:eye|eyes|ocular|ophthalmic|right)\b/.test(t),
     };
